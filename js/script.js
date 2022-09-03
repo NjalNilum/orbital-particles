@@ -21,7 +21,7 @@ function Canvas(options) {
     window.addEventListener('mousemove', this.mouseMove.bind(this), false);
     window.addEventListener('mouseout', this.resetTarget.bind(this), false);
   }
-  
+
   this.calculatePromities();
   this.setupParticles();
   this.loop();
@@ -35,11 +35,11 @@ Canvas.prototype.updateDimensions = function () {
   this.height = this.el.height = _.result(this.options, 'height') * this.dpr;
   this.el.style.width = _.result(this.options, 'width') + 'px';
   this.el.style.height = _.result(this.options, 'height') + 'px';
-  
+
   this.A = new Vector(colorOffset, colorOffset);
   this.B = new Vector(this.width - colorOffset, colorOffset);
-  this.C = new Vector(this.width - colorOffset, this.height- colorOffset);
-  this.D = new Vector(colorOffset, this.height- colorOffset);
+  this.C = new Vector(this.width - colorOffset, this.height - colorOffset);
+  this.D = new Vector(colorOffset, this.height - colorOffset);
 }
 
 // Set this.taget to the mouse corsor position
@@ -66,11 +66,11 @@ Canvas.prototype.touchMove = function (event) {
   this.calculatePromities();
 }
 
-Canvas.prototype.calculatePromities = function (){
-  this.proximityA = getCornerPointValue(this, this.A, this.target);
-  this.proximityB = getCornerPointValue(this, this.B, this.target);
-  this.proximityC = getCornerPointValue(this, this.C, this.target);
-  this.proximityD = getCornerPointValue(this, this.D, this.target);
+Canvas.prototype.calculatePromities = function () {
+  this.proximityA = getCornerPointValue(this.width, this.height, this.A, this.target);
+  this.proximityB = getCornerPointValue(this.width, this.height, this.B, this.target);
+  this.proximityC = getCornerPointValue(this.width, this.height, this.C, this.target);
+  this.proximityD = getCornerPointValue(this.width, this.height, this.D, this.target);
   this.sumProximity = this.proximityA + this.proximityB + this.proximityC + this.proximityD;
 }
 
@@ -240,14 +240,21 @@ function Particle(options, index) {
 
   // Speed
   this.speed = getRandom(minimumParticleSpeed, maximumParticleSpeed);
+  this.particleSpeedChangeRate = particleSpeedChangeRate * changeSignRandom();
 
   // Size
   this.size = getRandom(minimumParticleSize, maximumParticleSize);
-  this.particleSizeGrowthRate = particleSizeGrowthRate;
+  this.particleSizeGrowthRate = particleSizeGrowthRate * changeSignRandom();
 
-  //this.orbit = this.options.radius * 0.3 + (this.options.radius * 2 * Math.random());
-  this.orbitX = (((index + 5) % 10) + 5) * particleReferenceOrbitSize * getRandom(0.5, 2);
-  this.orbitY = (((index + 5) % 10) + 5) * particleReferenceOrbitSize * getRandom(0.5, 2);
+  // Orbit
+  this.orbitX = getRandom(minimumOrbit, maximumOrbit);
+  this.orbitY = getRandom(minimumOrbit, maximumOrbit);
+  this.orbitChangeRateX = orbitChangeRateX * changeSignRandom();
+  this.orbitChangeRateY = orbitChangeRateY * changeSignRandom();
+
+  // Theta
+  this.theta = getRandom(0,360);
+  this.thetaChangerate = thetaChangerate * changeSignRandom();
 
   this.proximityA = 0;
   this.proximityB = 0;
@@ -274,50 +281,43 @@ Particle.prototype.update = function (target, index) {
     this.position.y = this.particleShift.y + Math.cos(index + this.angle) * this.orbitY;
   }
 
+  // Rotate
+  positionHelper = rotate(this.particleShift.x, this.particleShift.y, this.position.x, this.position.y, this.theta);
+  this.position.x = positionHelper.newX;
+  this.position.y = positionHelper.newY;
+  thetaHelper = GetIncreasedValue(this.theta, this.thetaChangerate, 0, 360);
+  this.theta = thetaHelper.theValue;
+  this.thetaChangerate = thetaHelper.growthRate;
+
+  // Change orbit
+  let orbitHelper = GetIncreasedValue(this.orbitX, this.orbitChangeRateX, minimumOrbit, maximumOrbit);
+  this.orbitX = orbitHelper.theValue;
+  this.orbitChangeRateX = orbitHelper.growthRate;
+  orbitHelper = GetIncreasedValue(this.orbitY, this.orbitChangeRateY, minimumOrbit, maximumOrbit);
+  this.orbitY = orbitHelper.theValue;
+  this.orbitChangeRateY = orbitHelper.growthRate;
+
+  // Change speed
+  let speedHelper = GetIncreasedValue(this.speed, this.particleSpeedChangeRate, minimumParticleSpeed, maximumParticleSpeed);
+  this.speed = speedHelper.theValue;
+  this.particleSpeedChangeRate = speedHelper.growthRate;
+
   // Change the size per update
   let sizeHelper = GetIncreasedValue(this.size, this.particleSizeGrowthRate, minimumParticleSize, maximumParticleSize);
   this.size = sizeHelper.theValue;
   this.particleSizeGrowthRate = sizeHelper.growthRate;
+
+  // Get Proximity for coloring every single particle
   if (typeof theCanvas !== 'undefined') {
-  this.proximityA = getCornerPointValue(theCanvas, theCanvas.A, this.position);
-  this.proximityB = getCornerPointValue(theCanvas, theCanvas.B, this.position);
-  this.proximityC = getCornerPointValue(theCanvas, theCanvas.C, this.position);
-  this.proximityD = getCornerPointValue(theCanvas, theCanvas.D, this.position);
-  this.sumProximity = this.proximityA + this.proximityB + this.proximityC + this.proximityD;
+    this.proximityA = getCornerPointValue(theCanvas.width, theCanvas.height, theCanvas.A, this.position);
+    this.proximityB = getCornerPointValue(theCanvas.width, theCanvas.height, theCanvas.B, this.position);
+    this.proximityC = getCornerPointValue(theCanvas.width, theCanvas.height, theCanvas.C, this.position);
+    this.proximityD = getCornerPointValue(theCanvas.width, theCanvas.height, theCanvas.D, this.position);
+    this.sumProximity = this.proximityA + this.proximityB + this.proximityC + this.proximityD;
   }
   // Color
   this.color = getColor(this);
 }
-
-function getColor(particle) {
-  if (typeof theCanvas !== 'undefined') {
-    weightedColorArry = [];
-    weightedColorArry.push(getWeightetColor(color_A, particle.proximityA));
-    weightedColorArry.push(getWeightetColor(color_B, particle.proximityB));
-    weightedColorArry.push(getWeightetColor(color_C, particle.proximityC));
-    weightedColorArry.push(getWeightetColor(color_D, particle.proximityD));
-
-    r = g = b = 0;
-    for (let i = 0; i < weightedColorArry.length; i++) {
-      var color = weightedColorArry[i].split(',');
-      r += Math.round(parseInt(color[0]));
-      g += Math.round(parseInt(color[1]));
-      b += Math.round(parseInt(color[2]));
-    }
-    newColor = [];
-    newColor.push(r / theCanvas.sumProximity, g / theCanvas.sumProximity, b / theCanvas.sumProximity);
-    return newColor.join(', ')
-  }
-}
-
-function getWeightetColor(color, weight) {
-  var thecolor = color.split(',');
-  thecolor[0] *= weight;
-  thecolor[1] *= weight;
-  thecolor[2] *= weight;
-  return thecolor.join(', ');
-}
-
 
 // Main program starts here
 var PI2 = Math.PI * 2;
@@ -325,19 +325,30 @@ var HALF_PI = Math.PI / 2;
 var isTouch = 'ontouchstart' in window;
 var isSafari = !!navigator.userAgent.match(/Version\/[\d\.]+.*Safari/);
 
-const particleCount = 100;
+const particleCount = 70;
 const followMouseSpeed = 0.01;         // 1.0 means 100%. Percentage speed of orbital center to follow the mouse cursor position
 
 // That is very imprecise. This speed is the increment of the angular velocity in radians (Remember 2*Pi = 360°).
 const minimumParticleSpeed = 0.005;
-const maximumParticleSpeed = 0.015;
+const maximumParticleSpeed = 0.03;
+const particleSpeedChangeRate = 0.00001;
+
 // Minimal and maximal size of particles in pixel
 const minimumParticleSize = 2;
-const maximumParticleSize = 6;
+const maximumParticleSize = 4;
 const particleSizeGrowthRate = 0.01;         // the size is changing and this is the rate in pixels
 
-const particleReferenceOrbitSize = 25; // References orbit size means a referential distance to the center (mouse cursor) position. In pixel.
-const maximumLinkDistances = 200;      // maximum length of connection lines between particles in pixels.
+// Orbitsizes and changerate
+const minimumOrbit = 15;
+const maximumOrbit = 500;
+const orbitChangeRateX = 0.5; 
+const orbitChangeRateY = 0.4;
+
+// Ellipsoidal angle of rotation
+const theta = 0;
+const thetaChangerate = 0.1;
+
+const maximumLinkDistances = 300;      // maximum length of connection lines between particles in pixels.
 const maximumNumberOfLines = 10;        // Thats not correct. Have to figure it out.
 
 const color_A = '0,255,0';
@@ -345,15 +356,14 @@ const color_B = '255,255,0';
 const color_C = '255,0,0';
 const color_D = '0,0,255';
 
-const colorOffset = -400; // Full color center will move for this amount of pixels towards the center
+const colorOffset = -300; // Full color center will move for this amount of pixels towards the center
 
 var canvasOptions = {
   el: document.getElementById('canvas'),
   width: function () { return window.innerWidth; },
   height: function () { return window.innerHeight; },
-  background: ['0, 0, 5', '0,0,10']
+  background: ['0, 0, 10', '5,0,5', '7,0,0']
 };
 
 var theCanvas = new Canvas(canvasOptions);
-
 console.info(canvasOptions);
