@@ -6,6 +6,7 @@ function Canvas(options) {
   this.el = this.options.el;
   this.ctx = this.el.getContext('2d');
   this.dpr = window.devicePixelRatio || 1;
+  this.centerShiftPosition = new Vector(0,0);
 
   this.updateDimensions();
   window.addEventListener('resize', this.updateDimensions.bind(this), false);
@@ -66,6 +67,9 @@ Canvas.prototype.touchMove = function (event) {
   this.calculatePromities();
 }
 
+// ***********************************************************************************************
+// *** Calculate proximity of target to the corner points.
+// ***********************************************************************************************
 Canvas.prototype.calculatePromities = function () {
   this.proximityA = getCornerPointValue(this.width, this.height, this.A, this.target);
   this.proximityB = getCornerPointValue(this.width, this.height, this.B, this.target);
@@ -101,7 +105,7 @@ Canvas.prototype.setupParticles = function () {
   }
 }
 
-// Findet den am nächsten liegenden Partikel oder mehrere?
+// Findet den am nächsten liegenden Partikel oder mehrere
 Canvas.prototype.findClosest = function () {
   for (let index = 0; index < this.particles.length; index++) {
     this.particles[index].closest = [];
@@ -133,6 +137,7 @@ Canvas.prototype.loop = function () {
     this.findClosest();
   }
   this.draw();
+  //this.drawCenter();
   window.requestAnimationFrame(_.bind(this.loop, this));
 }
 
@@ -151,23 +156,25 @@ Canvas.prototype.ghost = function () {
   this.ctx.fill();
 }
 
-// Das Zeug hier ist für den Schweif der Partikel zuständig. Vielleicht man sich dazu mal ein Tutorial anschauen.
+// Sicher nicht für den Schweif verantwortlich. Das ist nur die Hintergrundfarbe des Canvas
 Canvas.prototype.ghostGradient = function () {
   var gradient;
 
-  if (typeof this.options.background === 'string') {
-    this.ctx.fillStyle = 'rgb(' + this.options.background + ')';
-  } else {
-    var gradient = this.ctx.createRadialGradient(this.width / 2, this.height / 2, 0, this.width / 2, this.height / 2, Math.max(this.width, this.height) / 2);
+  // if (typeof this.options.background === 'string') {
+  //   this.ctx.fillStyle = 'rgb(' + this.options.background + ')';
+  // } else {
+  //   var gradient = this.ctx.createRadialGradient(this.width / 2, this.height / 2, 0, this.width / 2, this.height / 2, Math.max(this.width, this.height) / 2);
 
-    var length = this.options.background.length;
-    for (var i = 0; i < length; i++) {
-      gradient.addColorStop((i + 1) / length, 'rgb(' + this.options.background[i] + ')');
-    }
-    this.ctx.fillStyle = gradient;
-  }
+  //   var length = this.options.background.length;
+  //   for (var i = 0; i < length; i++) {
+  //     gradient.addColorStop((i + 1) / length, 'rgb(' + this.options.background[i] + ')');
+  //   }
+  //   this.ctx.fillStyle = gradient;
+  // }
 
-  this.ctx.globalOpacity = 0.1;
+  //this.ctx.globalOpacity = 0.1;
+  this.ctx.fillStyle = 'rgb(' + [0,0,0] + ')';
+
   this.ctx.globalCompositeOperation = "darken";
   this.ctx.fillRect(0, 0, this.width, this.height);
 }
@@ -175,6 +182,9 @@ Canvas.prototype.ghostGradient = function () {
 // Draw
 // Function is called in a loop
 Canvas.prototype.draw = function () {
+  this.ctx.globalAlpha = 0.4;
+  this.ctx.globalCompositeOperation = "screen";
+  
   for (let index = 0; index < this.particles.length; index++) {
     var actualParticle = this.particles[index];
     var color = actualParticle.color || this.options.color;
@@ -182,9 +192,7 @@ Canvas.prototype.draw = function () {
 
     // Paints a 360° (2*PI) circle at particle position and fills it
     // So yes, this paints the particle.
-    this.ctx.globalAlpha = 0.3;
-    this.ctx.globalCompositeOperation = "lighten";
-    this.ctx.fillStyle = 'rgb(' + color + ')';
+    this.ctx.fillStyle = 'rgba(' + color + ',' + [255] + ')';
     this.ctx.beginPath();
     this.ctx.arc(actualParticle.position.x, actualParticle.position.y, actualParticle.size, 0, PI2, false);
     this.ctx.closePath();
@@ -199,8 +207,6 @@ Canvas.prototype.draw = function () {
 // Draw connecting lines
 Canvas.prototype.drawLines = function (particle, color) {
   color = color;
-  this.ctx.globalAlpha = 0.3;
-  this.ctx.globalCompositeOperation = "screen";
   this.ctx.lineCap = 'round';
   for (let index = 0; index < Math.min(particle.closest.length, maximumNumberOfLines); index++) {
     this.ctx.lineWidth = (particle.size) * particle.closest[index].opacity;
@@ -210,6 +216,20 @@ Canvas.prototype.drawLines = function (particle, color) {
     this.ctx.lineTo(particle.closest[index].x, particle.closest[index].y);
     this.ctx.stroke();
   }
+}
+
+Canvas.prototype.drawCenter = function () {
+  this.centerShiftPosition.x += (this.target.x - this.centerShiftPosition.x) * followMouseSpeed;
+  this.centerShiftPosition.y += (this.target.y - this.centerShiftPosition.y) * followMouseSpeed;
+  
+  this.ctx.globalCompositeOperation = "screen";
+  this.ctx.lineCap = 'round';
+  this.ctx.lineWidth = 1;
+    this.ctx.strokeStyle = 'rgba(' + [255,255,255] + ', ' + [255] + ')';
+    this.ctx.beginPath();
+    this.ctx.moveTo(this.centerShiftPosition.x, this.centerShiftPosition.y);
+    this.ctx.lineTo(this.target.x, this.target.y);
+    this.ctx.stroke();
 }
 
 // ***************************************************************************************************************************************************
@@ -329,8 +349,8 @@ const particleCount = 70;
 const followMouseSpeed = 0.01;         // 1.0 means 100%. Percentage speed of orbital center to follow the mouse cursor position
 
 // That is very imprecise. This speed is the increment of the angular velocity in radians (Remember 2*Pi = 360°).
-const minimumParticleSpeed = 0.005;
-const maximumParticleSpeed = 0.03;
+const minimumParticleSpeed = 0.001;
+const maximumParticleSpeed = 0.01;
 const particleSpeedChangeRate = 0.00001;
 
 // Minimal and maximal size of particles in pixel
@@ -356,7 +376,7 @@ const color_B = '255,255,0';
 const color_C = '255,0,0';
 const color_D = '0,0,255';
 
-const colorOffset = -300; // Full color center will move for this amount of pixels towards the center
+const colorOffset = 0; // Full color center will move for this amount of pixels towards the center
 
 var canvasOptions = {
   el: document.getElementById('canvas'),

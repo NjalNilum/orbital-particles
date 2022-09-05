@@ -103,6 +103,7 @@ function getColor(particle) {
 }
 
 function getWeightetColor(color, weight) {
+  weight = Math.pow(Math.sin(Math.PI/2 * weight),2); // this makes more color when moving towards corners
   var thecolor = color.split(',');
   thecolor[0] *= weight;
   thecolor[1] *= weight;
