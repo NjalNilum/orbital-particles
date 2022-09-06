@@ -3,7 +3,7 @@
 // ***************************************************************************************************************************************************
 function Canvas(options) {
   this.options = options;
-  this.el = this.options.el;
+  this.el = domCanvas;
   this.ctx = this.el.getContext('2d');
   this.dpr = window.devicePixelRatio || 1;
   this.centerShiftPosition = new Vector(0,0);
@@ -32,13 +32,16 @@ function Canvas(options) {
 // *** updateDimensions
 // ***************************************************************************************************************************************************
 Canvas.prototype.updateDimensions = function () {
-  this.width = this.el.width = _.result(this.options, 'width') * this.dpr;
-  this.height = this.el.height = _.result(this.options, 'height') * this.dpr;
+  this.width = window.innerWidth * this.dpr;
+  this.height = window.innerHeight * this.dpr;
 
-  this.A = new Vector(colorOffset, colorOffset);
-  this.B = new Vector(this.width - colorOffset, colorOffset);
-  this.C = new Vector(this.width - colorOffset, this.height - colorOffset);
-  this.D = new Vector(colorOffset, this.height - colorOffset);
+  this.el.width = this.width;
+  this.el.height = this.height;
+
+  this.A = new Vector(0, 0);
+  this.B = new Vector(this.width, 0);
+  this.C = new Vector(this.width, this.height);
+  this.D = new Vector(0, this.height);
 }
 
 // Set this.taget to the mouse corsor position
@@ -77,9 +80,6 @@ Canvas.prototype.calculatePromities = function () {
     getCornerPointValue(this.width, this.height, this.B, this.target),
     getCornerPointValue(this.width, this.height, this.C, this.target),
     getCornerPointValue(this.width, this.height, this.D, this.target));
-  
-  //  this.proximity[2] = makeSinusoidal(this.proximity[2], 2);
-  //  this.proximity[3] = makeSinusoidal(this.proximity[3], 2);
   
   this.sumProximity = 0;
   this.proximity.forEach(element => {
@@ -191,7 +191,7 @@ Canvas.prototype.ghostGradient = function () {
 // Draw
 // Function is called in a loop
 Canvas.prototype.draw = function () {
-  this.ctx.globalAlpha = 0.4;
+  this.ctx.globalAlpha = 0.2;
   this.ctx.globalCompositeOperation = "screen";
   
   for (let index = 0; index < this.particles.length; index++) {
@@ -203,7 +203,7 @@ Canvas.prototype.draw = function () {
     // So yes, this paints the particle.
     this.ctx.fillStyle = 'rgba(' + color + ',' + [255] + ')';
     this.ctx.beginPath();
-    this.ctx.arc(actualParticle.position.x, actualParticle.position.y, actualParticle.size, 0, PI2, false);
+    this.ctx.arc(actualParticle.position.x, actualParticle.position.y, actualParticle.size*this.dpr, 0, PI2, false);
     this.ctx.closePath();
     this.ctx.fill();
 
@@ -218,7 +218,7 @@ Canvas.prototype.drawLines = function (particle, color) {
   color = color;
   this.ctx.lineCap = 'round';
   for (let index = 0; index < Math.min(particle.closest.length, maximumNumberOfLines); index++) {
-    this.ctx.lineWidth = (particle.size) * particle.closest[index].opacity;
+    this.ctx.lineWidth = (particle.size*this.dpr) * particle.closest[index].opacity;
     this.ctx.strokeStyle = 'rgba(' + color + ', ' + particle.closest[index].opacity + ')';
     this.ctx.beginPath();
     this.ctx.moveTo(particle.position.x, particle.position.y);
@@ -343,10 +343,7 @@ Particle.prototype.update = function (target, index) {
       getCornerPointValue(theCanvas.width, theCanvas.height, theCanvas.A, this.position),
       getCornerPointValue(theCanvas.width, theCanvas.height, theCanvas.B, this.position),
       getCornerPointValue(theCanvas.width, theCanvas.height, theCanvas.C, this.position),
-      getCornerPointValue(theCanvas.width, theCanvas.height, theCanvas.D, this.position));
-    
-    //  this.proximity[2] = makeSinusoidal(this.proximity[2], 2);
-    //  this.proximity[3] = makeSinusoidal(this.proximity[3], 2);
+      getCornerPointValue(theCanvas.width, theCanvas.height, theCanvas.D, this.position)); 
     
     this.sumProximity = 0;
     this.proximity.forEach(element => {
@@ -354,7 +351,7 @@ Particle.prototype.update = function (target, index) {
     });
   }
   // Color
-  this.color = getColor(this.proximity, this.sumProximity);
+  this.color = getColor(this.proximity, factorForUsingLogisticColorFunction);
 }
 
 // Main program starts here
@@ -363,17 +360,17 @@ var HALF_PI = Math.PI / 2;
 var isTouch = 'ontouchstart' in window;
 var isSafari = !!navigator.userAgent.match(/Version\/[\d\.]+.*Safari/);
 
-const particleCount = 70;
+const particleCount = 60;
 const followMouseSpeed = 0.03;         // 1.0 means 100%. Percentage speed of orbital center to follow the mouse cursor position
 
 // That is very imprecise. This speed is the increment of the angular velocity in radians (Remember 2*Pi = 360°).
 const minimumParticleSpeed = 0.001;
-const maximumParticleSpeed = 0.01;
+const maximumParticleSpeed = 0.02;
 const particleSpeedChangeRate = 0.00001;
 
 // Minimal and maximal size of particles in pixel
 const minimumParticleSize = 2;
-const maximumParticleSize = 4;
+const maximumParticleSize = 5;
 const particleSizeGrowthRate = 0.01;         // the size is changing and this is the rate in pixels
 
 // Orbitsizes and changerate
@@ -387,19 +384,18 @@ const theta = 0;
 const thetaChangerate = 0.1;
 
 const maximumLinkDistances = 300;      // maximum length of connection lines between particles in pixels.
-const maximumNumberOfLines = 10;        // Thats not correct. Have to figure it out.
+const maximumNumberOfLines = 5;        // Thats not correct. Have to figure it out.
 
 const color_A = '0,200,0';
 const color_B = '255,200,0';
 const color_C = '255,0,0';
 const color_D = '0,0,255';
 
-const colorOffset = 0; // Full color center will move for this amount of pixels towards the center
+const factorForUsingLogisticColorFunction = 0.5; // Full color center will move for this amount of pixels towards the center
+
+const domCanvas = document.getElementsByTagName('canvas')[0];
 
 var canvasOptions = {
-  el: document.getElementById('canvas'),
-  width: function () { return window.innerWidth; },
-  height: function () { return window.innerHeight; },
   background: ['0, 0, 10', '5,0,5', '7,0,0']
 };
 

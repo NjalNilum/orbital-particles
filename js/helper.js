@@ -79,21 +79,23 @@ function getNormalizedGravity(point, pointOfInterest, maxLength) {
   return 1 - distanceToPoint;
 }
 
-function makeSinusoidal(normalizedValue, exponent){
+function makeLogisticGrowthFunction(originalValue, usageOfThisInPercent){
   //return normalizedValue;
-  return ((-1) * Math.pow(Math.sin(Math.PI/2 * normalizedValue + Math.PI/2),exponent)) + 1;
+  let newValue = 1.0 / (1 + Math.pow(Math.E, (-4*originalValue+2)*4));
+  return newValue * usageOfThisInPercent + originalValue * (1-usageOfThisInPercent);
+  //return ((-1) * Math.pow(Math.sin(Math.PI/2 * normalizedValue + Math.PI/2),exponent)) + 1;
 }
 
 // ***************************************************************************************************************************************************
 // Color nightmare. Someone who knows js is sure to get the nonsense here down better.
 // ***************************************************************************************************************************************************
-function getColor(proximityArray, sumProximity) {
+function getColor(proximityArray, useLogisticGrowthInPercent) {
   if (typeof theCanvas !== 'undefined') {
     weightedColorArry = [];
-    weightedColorArry.push(getWeightetColor(color_A, proximityArray[0]));
-    weightedColorArry.push(getWeightetColor(color_B, proximityArray[1]));
-    weightedColorArry.push(getWeightetColor(color_C, proximityArray[2]));
-    weightedColorArry.push(getWeightetColor(color_D, proximityArray[3]));
+    weightedColorArry.push(getWeightetColor(color_A, makeLogisticGrowthFunction(proximityArray[0], useLogisticGrowthInPercent)));
+    weightedColorArry.push(getWeightetColor(color_B, makeLogisticGrowthFunction(proximityArray[1],useLogisticGrowthInPercent)));
+    weightedColorArry.push(getWeightetColor(color_C, makeLogisticGrowthFunction(proximityArray[2],useLogisticGrowthInPercent)));
+    weightedColorArry.push(getWeightetColor(color_D, makeLogisticGrowthFunction(proximityArray[3],useLogisticGrowthInPercent)));
 
     r = g = b = 0;
     for (let i = 0; i < weightedColorArry.length; i++) {
@@ -107,7 +109,6 @@ function getColor(proximityArray, sumProximity) {
       Math.min(r,255),
       Math.min(g,255),
       Math.min(b,255));
-    //newColor.push(r / sumProximity, g / sumProximity, b / sumProximity);
     return newColor.join(', ')
   }
 }
