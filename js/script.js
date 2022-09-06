@@ -34,8 +34,6 @@ function Canvas(options) {
 Canvas.prototype.updateDimensions = function () {
   this.width = this.el.width = _.result(this.options, 'width') * this.dpr;
   this.height = this.el.height = _.result(this.options, 'height') * this.dpr;
-  this.el.style.width = _.result(this.options, 'width') + 'px';
-  this.el.style.height = _.result(this.options, 'height') + 'px';
 
   this.A = new Vector(colorOffset, colorOffset);
   this.B = new Vector(this.width - colorOffset, colorOffset);
@@ -49,6 +47,9 @@ Canvas.prototype.mouseMove = function (event) {
 
   //Calculates the relative proximity of the target to the corners of the canvas. 
   this.calculatePromities();
+  // console.info(this.target);
+  // console.info(this.proximity);
+  // console.info(getColor(this.proximity, this.sumProximity))
 }
 
 // Reset to center when the mouse moved out of browser window
@@ -71,11 +72,19 @@ Canvas.prototype.touchMove = function (event) {
 // *** Calculate proximity of target to the corner points.
 // ***********************************************************************************************
 Canvas.prototype.calculatePromities = function () {
-  this.proximityA = getCornerPointValue(this.width, this.height, this.A, this.target);
-  this.proximityB = getCornerPointValue(this.width, this.height, this.B, this.target);
-  this.proximityC = getCornerPointValue(this.width, this.height, this.C, this.target);
-  this.proximityD = getCornerPointValue(this.width, this.height, this.D, this.target);
-  this.sumProximity = this.proximityA + this.proximityB + this.proximityC + this.proximityD;
+  this.proximity = new Array(
+    getCornerPointValue(this.width, this.height, this.A, this.target),
+    getCornerPointValue(this.width, this.height, this.B, this.target),
+    getCornerPointValue(this.width, this.height, this.C, this.target),
+    getCornerPointValue(this.width, this.height, this.D, this.target));
+  
+  //  this.proximity[2] = makeSinusoidal(this.proximity[2], 2);
+  //  this.proximity[3] = makeSinusoidal(this.proximity[3], 2);
+  
+  this.sumProximity = 0;
+  this.proximity.forEach(element => {
+    this.sumProximity += element
+  });
 }
 
 // ***************************************************************************************************************************************************
@@ -329,14 +338,23 @@ Particle.prototype.update = function (target, index) {
 
   // Get Proximity for coloring every single particle
   if (typeof theCanvas !== 'undefined') {
-    this.proximityA = getCornerPointValue(theCanvas.width, theCanvas.height, theCanvas.A, this.position);
-    this.proximityB = getCornerPointValue(theCanvas.width, theCanvas.height, theCanvas.B, this.position);
-    this.proximityC = getCornerPointValue(theCanvas.width, theCanvas.height, theCanvas.C, this.position);
-    this.proximityD = getCornerPointValue(theCanvas.width, theCanvas.height, theCanvas.D, this.position);
-    this.sumProximity = this.proximityA + this.proximityB + this.proximityC + this.proximityD;
+    
+    this.proximity = new Array(
+      getCornerPointValue(theCanvas.width, theCanvas.height, theCanvas.A, this.position),
+      getCornerPointValue(theCanvas.width, theCanvas.height, theCanvas.B, this.position),
+      getCornerPointValue(theCanvas.width, theCanvas.height, theCanvas.C, this.position),
+      getCornerPointValue(theCanvas.width, theCanvas.height, theCanvas.D, this.position));
+    
+    //  this.proximity[2] = makeSinusoidal(this.proximity[2], 2);
+    //  this.proximity[3] = makeSinusoidal(this.proximity[3], 2);
+    
+    this.sumProximity = 0;
+    this.proximity.forEach(element => {
+      this.sumProximity += element
+    });
   }
   // Color
-  this.color = getColor(this);
+  this.color = getColor(this.proximity, this.sumProximity);
 }
 
 // Main program starts here
@@ -346,7 +364,7 @@ var isTouch = 'ontouchstart' in window;
 var isSafari = !!navigator.userAgent.match(/Version\/[\d\.]+.*Safari/);
 
 const particleCount = 70;
-const followMouseSpeed = 0.01;         // 1.0 means 100%. Percentage speed of orbital center to follow the mouse cursor position
+const followMouseSpeed = 0.03;         // 1.0 means 100%. Percentage speed of orbital center to follow the mouse cursor position
 
 // That is very imprecise. This speed is the increment of the angular velocity in radians (Remember 2*Pi = 360°).
 const minimumParticleSpeed = 0.001;
@@ -371,8 +389,8 @@ const thetaChangerate = 0.1;
 const maximumLinkDistances = 300;      // maximum length of connection lines between particles in pixels.
 const maximumNumberOfLines = 10;        // Thats not correct. Have to figure it out.
 
-const color_A = '0,255,0';
-const color_B = '255,255,0';
+const color_A = '0,200,0';
+const color_B = '255,200,0';
 const color_C = '255,0,0';
 const color_D = '0,0,255';
 

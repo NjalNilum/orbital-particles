@@ -58,7 +58,8 @@ Vector.prototype.distanceTo = function (vector, abs) {
 // ***************************************************************************************************************************************************
 function getCornerPointValue(width, height, cornerPoint, pointOfInterest) {
   cornerpointMaxLine = getCornerpointMaxLine(width, height, cornerPoint, pointOfInterest)
-  return getNormalizedGravity(cornerPoint, pointOfInterest, cornerpointMaxLine);
+  let normalizedGravity = getNormalizedGravity(cornerPoint, pointOfInterest, cornerpointMaxLine);
+  return normalizedGravity;
 }
 
 function getCornerpointMaxLine(width, height, cornerPoint, pointOfInterest) {
@@ -78,16 +79,21 @@ function getNormalizedGravity(point, pointOfInterest, maxLength) {
   return 1 - distanceToPoint;
 }
 
+function makeSinusoidal(normalizedValue, exponent){
+  //return normalizedValue;
+  return ((-1) * Math.pow(Math.sin(Math.PI/2 * normalizedValue + Math.PI/2),exponent)) + 1;
+}
+
 // ***************************************************************************************************************************************************
 // Color nightmare. Someone who knows js is sure to get the nonsense here down better.
 // ***************************************************************************************************************************************************
-function getColor(particle) {
+function getColor(proximityArray, sumProximity) {
   if (typeof theCanvas !== 'undefined') {
     weightedColorArry = [];
-    weightedColorArry.push(getWeightetColor(color_A, particle.proximityA));
-    weightedColorArry.push(getWeightetColor(color_B, particle.proximityB));
-    weightedColorArry.push(getWeightetColor(color_C, particle.proximityC));
-    weightedColorArry.push(getWeightetColor(color_D, particle.proximityD));
+    weightedColorArry.push(getWeightetColor(color_A, proximityArray[0]));
+    weightedColorArry.push(getWeightetColor(color_B, proximityArray[1]));
+    weightedColorArry.push(getWeightetColor(color_C, proximityArray[2]));
+    weightedColorArry.push(getWeightetColor(color_D, proximityArray[3]));
 
     r = g = b = 0;
     for (let i = 0; i < weightedColorArry.length; i++) {
@@ -97,13 +103,16 @@ function getColor(particle) {
       b += Math.round(parseInt(color[2]));
     }
     newColor = [];
-    newColor.push(r / particle.sumProximity, g / particle.sumProximity, b / particle.sumProximity);
+    newColor.push(
+      Math.min(r,255),
+      Math.min(g,255),
+      Math.min(b,255));
+    //newColor.push(r / sumProximity, g / sumProximity, b / sumProximity);
     return newColor.join(', ')
   }
 }
 
 function getWeightetColor(color, weight) {
-  weight = Math.pow(Math.sin(Math.PI/2 * weight),2); // this makes more color when moving towards corners
   var thecolor = color.split(',');
   thecolor[0] *= weight;
   thecolor[1] *= weight;
