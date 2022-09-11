@@ -155,7 +155,7 @@ Canvas.prototype.clear = function () {
 }
 
 Canvas.prototype.ghost = function () {
-  this.ctx.globalCompositeOperation = "darken";
+  this.ctx.globalCompositeOperation = "source-over";
   this.ctx.rect(0, 0, this.width, this.height);
   if (typeof this.options.background === 'string') {
     this.ctx.fillStyle = "rgb(" + this.options.background + ")";
