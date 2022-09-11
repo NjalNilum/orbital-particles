@@ -155,6 +155,7 @@ Canvas.prototype.clear = function () {
 }
 
 Canvas.prototype.ghost = function () {
+  this.ctx.globalCompositeOperation = "darken";
   this.ctx.rect(0, 0, this.width, this.height);
   if (typeof this.options.background === 'string') {
     this.ctx.fillStyle = "rgb(" + this.options.background + ")";
@@ -181,7 +182,7 @@ Canvas.prototype.ghostGradient = function () {
   }
 
   this.ctx.globalOpacity = 0.1;
-  //this.ctx.fillStyle = 'rgb(' + [15, 15, 22] + ')';
+  this.ctx.fillStyle = 'rgb(' + [15, 15, 22] + ')';
 
   this.ctx.globalCompositeOperation = "darken";
   this.ctx.fillRect(0, 0, this.width, this.height);
@@ -191,7 +192,7 @@ Canvas.prototype.ghostGradient = function () {
 // Function is called in a loop
 Canvas.prototype.draw = function () {
   this.ctx.globalAlpha = 0.3;
-  this.ctx.globalCompositeOperation = "screen";
+  this.ctx.globalCompositeOperation = "lighten";
 
   for (let index = 0; index < this.particles.length; index++) {
     var actualParticle = this.particles[index];
