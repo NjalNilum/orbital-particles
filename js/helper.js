@@ -76,6 +76,7 @@ function getCornerpointMaxLine(width, height, cornerPoint, pointOfInterest) {
 
 function getNormalizedGravity(point, pointOfInterest, maxLength) {
   distanceToPoint = ((1.0) * point.distanceTo(pointOfInterest)) / maxLength;
+  distanceToPoint = Math.min(1, distanceToPoint);
   return 1 - distanceToPoint;
 }
 
