@@ -235,7 +235,7 @@ Canvas.prototype.ghostGradient = function () {
     this.ctx.fillStyle = gradient;
   }
 
-  this.ctx.globalOpacity = 0.1;
+  this.ctx.globalOpacity = 0.9;
   //this.ctx.fillStyle = 'rgb(' + [15, 15, 22] + ')';
 
   this.ctx.globalCompositeOperation = "source-over";
@@ -265,7 +265,9 @@ Canvas.prototype.draw = function () {
         actualParticle.size);
 
       gradient.addColorStop(0, 'rgb(' + color + ')');
-      gradient.addColorStop(1, 'rgba(0,0,0,0)');
+      gradient.addColorStop(0.2, 'rgb(' + color + ')');
+      //gradient.addColorStop(0.2, 'rgba(' + color + ', ' + 0.2 + ')');
+      gradient.addColorStop(1, 'rgba(' + color + ', ' + 0 + ')');
       this.ctx.fillStyle = gradient;
       //this.ctx.fillStyle = actualParticle.color;
       this.ctx.beginPath();
@@ -287,19 +289,19 @@ Canvas.prototype.drawLines = function (particle, color) {
   this.ctx.lineCap = 'round';
 
   for (const [key, value] of Object.entries(particle.closest)) {
-    this.ctx.lineWidth = particle.size * this.dpr * particle.opacities[key];
+    this.ctx.lineWidth = particle.size * this.dpr /2.5;// * particle.opacities[key];
 
     // super duoer gradient. perfprmance issue.
-    // var gradient = this.ctx.createLinearGradient(
-    //   particle.position.x,
-    //   particle.position.y,
-    //   value.position.x,
-    //   value.position.y);
-    // gradient.addColorStop(0, 'rgba(' + particle.color + ', ' + particle.opacities[key] + ')');
-    // gradient.addColorStop(1, 'rgba(' + value.color + ', ' + particle.opacities[key] + ')');
-    // this.ctx.strokeStyle = gradient;
+    var gradient = this.ctx.createLinearGradient(
+      particle.position.x,
+      particle.position.y,
+      value.position.x,
+      value.position.y);
+    gradient.addColorStop(0, 'rgba(' + particle.color + ', ' + particle.opacities[key] + ')');
+    gradient.addColorStop(1, 'rgba(' + value.color + ', ' + particle.opacities[key] + ')');
+    this.ctx.strokeStyle = gradient;
 
-    this.ctx.strokeStyle = 'rgba(' + particle.color + ', ' + particle.opacities[key] + ')';
+    //this.ctx.strokeStyle = 'rgba(' + particle.color + ', ' + particle.opacities[key] + ')';
     this.ctx.beginPath();
     this.ctx.moveTo(particle.position.x, particle.position.y);
     this.ctx.lineTo(value.position.x, value.position.y);
@@ -436,7 +438,7 @@ var HALF_PI = Math.PI / 2;
 var isTouch = 'ontouchstart' in window;
 var isSafari = !!navigator.userAgent.match(/Version\/[\d\.]+.*Safari/);
 
-const particleCount = 35;
+const particleCount = 55;
 const followMouseSpeed = 0.03;             // 1.0 means 100%. Percentage speed of orbital center to follow the mouse cursor position
 
 // That is very imprecise. This speed is the increment of the angular velocity in radians (Remember 2*Pi = 360°).
@@ -451,7 +453,7 @@ const particleSizeGrowthRate = 0.01;       // the size is changing and this is t
 
 // Orbitsizes and changerate
 const minimumOrbit = 10;
-const maximumOrbit = 350;
+const maximumOrbit = 550;
 const orbitChangeRateX = 0.5;
 const orbitChangeRateY = 0.4;
 
@@ -459,8 +461,8 @@ const orbitChangeRateY = 0.4;
 const theta = 0;
 const thetaChangerate = 0.1;
 
-const maximumLinkDistances = 450;      // maximum length of connection lines between particles in pixels.
-const maximumNumberOfLines = 3;        // Thats not correct. Have to figure it out.
+const maximumLinkDistances = 650;      // maximum length of connection lines between particles in pixels.
+const maximumNumberOfLines = 2;        // Thats not correct. Have to figure it out.
 
 const color_A = '10,200,10';
 const color_B = '255,200,10';
