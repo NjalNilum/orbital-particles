@@ -51,6 +51,7 @@ Vector.prototype.distanceTo = function (vector, abs) {
 };
 
 
+
 // ***************************************************************************************************************************************************
 // Angenommen in jedem Eckpunkt herrscht eine Gewicht von 1.0 des jeweiligen Eckpunktes, wobei die restlichen drei
 // Eckpunkte ein Gewicht von 0.0 haben. Je weiter ein pointOfInterest von einem Eckpunkt entfernt ist, desto weniger nimmt
@@ -169,7 +170,7 @@ function getColor(proximityArray, useLogisticGrowthInPercent) {
 
     r = g = b = 0;
     for (let i = 0; i < weightedColorArry.length; i++) {
-      var color = weightedColorArry[i].split(',');
+      var color = weightedColorArry[i];
       r += Math.round(parseInt(color[0]));
       g += Math.round(parseInt(color[1]));
       b += Math.round(parseInt(color[2]));
@@ -189,9 +190,9 @@ function getColor(proximityArray, useLogisticGrowthInPercent) {
 }
 
 function getWeightetColor(color, weight) {
-  var thecolor = color.split(',');
+  var thecolor = [...color];
   thecolor[0] *= weight;
   thecolor[1] *= weight;
   thecolor[2] *= weight;
-  return thecolor.join(', ');
+  return thecolor;
 }

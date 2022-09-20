@@ -7,6 +7,9 @@ function Canvas(options) {
   this.ctx = this.el.getContext('2d');
   this.dpr = window.devicePixelRatio || 1;
   this.centerShiftPosition = new Vector(0, 0);
+  this.target = new Vector(0,0);
+
+  this.el.style.cursor = 'none';
 
   this.updateDimensions();
   window.addEventListener('resize', this.updateDimensions.bind(this), false);
@@ -46,7 +49,8 @@ Canvas.prototype.updateDimensions = function () {
 
 // Set this.taget to the mouse corsor position
 Canvas.prototype.mouseMove = function (event) {
-  this.target = new Vector(event.clientX * this.dpr, event.clientY * this.dpr);
+  this.target.x = event.clientX * this.dpr;
+  this.target.y = event.clientY * this.dpr;
 
   //Calculates the relative proximity of the target to the corners of the canvas. 
   this.calculatePromities();
@@ -57,7 +61,8 @@ Canvas.prototype.mouseMove = function (event) {
 
 // Reset to center when the mouse moved out of browser window
 Canvas.prototype.resetTarget = function () {
-  this.target = new Vector(this.width / 2, this.height / 2);
+  this.target.x = this.width / 2;
+  this.target.y = this.height / 2;
   this.calculatePromities();
 }
 
@@ -65,8 +70,8 @@ Canvas.prototype.resetTarget = function () {
 Canvas.prototype.touchMove = function (event) {
   if (event.touches.length === 1) { event.preventDefault(); }
 
-  this.target = new Vector(event.touches[0].pageX * this.dpr, event.touches[0].pageY * this.dpr);
-
+  this.target.x = event.touches[0].pageX * this.dpr;
+  this.target.y = event.touches[0].pageY * this.dpr;
   //Calculates the relative proximity of the target to the corners of the canvas. 
   this.calculatePromities();
 }
@@ -120,14 +125,15 @@ Canvas.prototype.doClostestStuff = function () {
 
     // Remove particles that are further away than the maximum distance.
     var removeMe = [];
-    for (const [key, value] of Object.entries(actualParticle.closest)) {
+    for (const [key, value] of actualParticle.closest) {
       var distance = actualParticle.position.distanceTo(value.position);
       if (distance > maximumLinkDistances) {
         removeMe.push(key);
+        actualParticle.countOfClosest--;
       }
     }
     removeMe.forEach(indexToDelete => {
-      delete actualParticle.closest[indexToDelete];
+      actualParticle.closest.delete(indexToDelete);
       delete actualParticle.opacities[indexToDelete];
     });
 
@@ -136,11 +142,11 @@ Canvas.prototype.doClostestStuff = function () {
     randomParticleStartOfLoop = getRandom(0, this.particles.length - 2) | 0;
 
     for (let indexOfClosest = randomParticleStartOfLoop + 1;
-      indexOfClosest != randomParticleStartOfLoop;
-      indexOfClosest = (indexOfClosest + 1) % this.particles.length) {
+         indexOfClosest != randomParticleStartOfLoop;
+         indexOfClosest = (indexOfClosest + 1) % this.particles.length) {
 
       // Do nothing if the maximum number of connected particles has already been reached with a certain distance.
-      if (Object.keys(actualParticle.closest).length >= maximumNumberOfLines) {
+      if (actualParticle.countOfClosest >= maximumNumberOfLines) {
         break;
       }
 
@@ -150,14 +156,15 @@ Canvas.prototype.doClostestStuff = function () {
         var distance = actualParticle.position.distanceTo(innerParticle.position);
         if (distance < maximumLinkDistances) {
 
-          if ((Object.keys(innerParticle.closest).length < maximumNumberOfLines)) {
+          if ((innerParticle.closest.size < maximumNumberOfLines)) {
             var opacity = (1 - (distance / maximumLinkDistances)) /3;
             actualParticle.opacities[innerParticle.index] = opacity;
             innerParticle.opacities[actualParticle.index] = opacity;
             
             if (!(actualParticle.index in innerParticle.closest)) {
-              actualParticle.closest[innerParticle.index] = innerParticle;
-              innerParticle.closest[actualParticle.index] = actualParticle;
+              actualParticle.closest.set(innerParticle.index, innerParticle);
+              innerParticle.closest.set(actualParticle.index, actualParticle);
+              actualParticle.countOfClosest++;
             }
           }
         }
@@ -199,7 +206,7 @@ Canvas.prototype.loop = function () {
     this.doClostestStuff();
   }
   this.draw();
-  //this.drawCenter();
+  this.drawCenter();
   window.requestAnimationFrame(_.bind(this.loop, this));
 }
 
@@ -245,7 +252,7 @@ Canvas.prototype.ghostGradient = function () {
 // Draw
 // Function is called in a loop
 Canvas.prototype.draw = function () {
-  this.ctx.globalAlpha = 0.3;
+  this.ctx.globalAlpha = 0.2;
   this.ctx.globalCompositeOperation = "lighten";
 
   for (let index = 0; index < this.particles.length; index++) {
@@ -253,30 +260,34 @@ Canvas.prototype.draw = function () {
     var color = actualParticle.color;
     actualParticle.update(this.target, index);
 
-    if (typeof color !== 'undefined' && color.split(',')[0] != "NaN") {
+    if (typeof color !== 'undefined' && !color.includes("NaN")) {
       // Paints a 360° (2*PI) circle at particle position and fills it
       // So yes, this paints the particle.
-      var gradient = this.ctx.createRadialGradient(
-        actualParticle.position.x,
-        actualParticle.position.y,
-        minimumParticleSize,
-        actualParticle.position.x,
-        actualParticle.position.y,
-        actualParticle.size);
+      // var gradient = this.ctx.createRadialGradient(
+      //   actualParticle.position.x,
+      //   actualParticle.position.y,
+      //   minimumParticleSize,
+      //   actualParticle.position.x,
+      //   actualParticle.position.y,
+      //   actualParticle.size);
 
-      gradient.addColorStop(0, 'rgb(' + color + ')');
-      gradient.addColorStop(0.2, 'rgb(' + color + ')');
-      //gradient.addColorStop(0.2, 'rgba(' + color + ', ' + 0.2 + ')');
-      gradient.addColorStop(1, 'rgba(' + color + ', ' + 0 + ')');
-      this.ctx.fillStyle = gradient;
-      //this.ctx.fillStyle = actualParticle.color;
+      // gradient.addColorStop(0, 'rgb(' + color + ')');
+      // gradient.addColorStop(0.2, 'rgb(' + color + ')');
+      // //gradient.addColorStop(0.2, 'rgba(' + color + ', ' + 0.2 + ')');
+      // gradient.addColorStop(1, 'rgba(' + color + ', ' + 0 + ')');
+      // this.ctx.fillStyle = gradient;
+      
+      this.ctx.fillStyle = 'rgb(' + color + ')';
+      
+      for (let i=0; i < 5; i++){
       this.ctx.beginPath();
       this.ctx.arc(actualParticle.position.x, actualParticle.position.y, actualParticle.size * this.dpr, 0, PI2, false);
       this.ctx.closePath();
       this.ctx.fill();
-
+      }
+     
       if (maximumLinkDistances > 0) {
-        this.drawLines(actualParticle, color);
+       this.drawLines(actualParticle, color);
       }
     }
   }
@@ -285,11 +296,10 @@ Canvas.prototype.draw = function () {
 // Draw connecting lines
 Canvas.prototype.drawLines = function (particle, color) {
   color = color;
-  countOfClosest = Object.keys(particle.closest).length;
   this.ctx.lineCap = 'round';
 
-  for (const [key, value] of Object.entries(particle.closest)) {
-    this.ctx.lineWidth = particle.size * this.dpr /2.5;// * particle.opacities[key];
+  for (const [key, value] of particle.closest) {
+    this.ctx.lineWidth = particle.size * this.dpr / 1;// * particle.opacities[key];
 
     // super duoer gradient. perfprmance issue.
     var gradient = this.ctx.createLinearGradient(
@@ -297,11 +307,11 @@ Canvas.prototype.drawLines = function (particle, color) {
       particle.position.y,
       value.position.x,
       value.position.y);
-    gradient.addColorStop(0, 'rgba(' + particle.color + ', ' + particle.opacities[key] + ')');
-    gradient.addColorStop(1, 'rgba(' + value.color + ', ' + particle.opacities[key] + ')');
+    gradient.addColorStop(0, 'rgba(' + particle.color + ', ' + particle.opacities[key]*2 + ')');
+    gradient.addColorStop(1, 'rgba(' + value.color + ', ' + particle.opacities[key]*2 + ')');
     this.ctx.strokeStyle = gradient;
 
-    //this.ctx.strokeStyle = 'rgba(' + particle.color + ', ' + particle.opacities[key] + ')';
+    //this.ctx.strokeStyle = 'rgba(' + particle.color + ', ' + particle.opacities[key]*2 + ')';
     this.ctx.beginPath();
     this.ctx.moveTo(particle.position.x, particle.position.y);
     this.ctx.lineTo(value.position.x, value.position.y);
@@ -315,7 +325,7 @@ Canvas.prototype.drawCenter = function () {
 
   this.ctx.lineCap = 'round';
   this.ctx.lineWidth = 1;
-  this.ctx.strokeStyle = 'rgba(' + [255, 255, 255] + ', ' + [255] + ')';
+  this.ctx.strokeStyle = 'rgb(' + [0, 0, 255] + ')';
   this.ctx.beginPath();
   this.ctx.moveTo(this.centerShiftPosition.x, this.centerShiftPosition.y);
   this.ctx.lineTo(this.target.x, this.target.y);
@@ -329,8 +339,9 @@ function Particle(options, index) {
   options = _.clone(options || {});
   this.options = _.defaults(options, this.options);
   this.index = index;
-  this.closest = {}; // Use this as map/dict for linked particles with a certain maximum distance to paint lines between those particles.
+  this.closest = new Map(); // Use this as map/dict for linked particles with a certain maximum distance to paint lines between those particles.
   this.opacities = {}; // Every added particle must have its own opacity without sideeffects.
+  this.countOfClosest = 0;
 
   // Here, Ike either made a significant mistake or did it on purpose.
   // original code: this.position = this.shift = new Vector(this.options.x, this.options.y);
@@ -438,22 +449,24 @@ var HALF_PI = Math.PI / 2;
 var isTouch = 'ontouchstart' in window;
 var isSafari = !!navigator.userAgent.match(/Version\/[\d\.]+.*Safari/);
 
-const particleCount = 55;
+const dpr = window.devicePixelRatio || 1;
+
+const particleCount = 25;
 const followMouseSpeed = 0.03;             // 1.0 means 100%. Percentage speed of orbital center to follow the mouse cursor position
 
 // That is very imprecise. This speed is the increment of the angular velocity in radians (Remember 2*Pi = 360°).
-const minimumParticleSpeed = 0.001;
-const maximumParticleSpeed = 0.03;         // don't set it higher than 0.03 (3% of framerate), otherwise animation won't look smooth.
+const minimumParticleSpeed = 0.005;
+const maximumParticleSpeed = 0.05;         // don't set it higher than 0.03 (3% of framerate), otherwise animation won't look smooth.
 const particleSpeedChangeRate = 0.00001;
 
 // Minimal and maximal size of particles in pixel
-const minimumParticleSize = 2;
-const maximumParticleSize = 8;
+const minimumParticleSize = 1;
+const maximumParticleSize = 6;
 const particleSizeGrowthRate = 0.01;       // the size is changing and this is the rate in pixels
 
 // Orbitsizes and changerate
 const minimumOrbit = 10;
-const maximumOrbit = 550;
+const maximumOrbit = 250 * dpr;
 const orbitChangeRateX = 0.5;
 const orbitChangeRateY = 0.4;
 
@@ -461,20 +474,20 @@ const orbitChangeRateY = 0.4;
 const theta = 0;
 const thetaChangerate = 0.1;
 
-const maximumLinkDistances = 650;      // maximum length of connection lines between particles in pixels.
-const maximumNumberOfLines = 2;        // Thats not correct. Have to figure it out.
+const maximumLinkDistances = 300*dpr;      // maximum length of connection lines between particles in pixels.
+const maximumNumberOfLines = 3;        // Thats not correct. Have to figure it out.
 
-const color_A = '10,200,10';
-const color_B = '255,200,10';
-const color_C = '255,10,10';
-const color_D = '10,10,255';
+const color_A = [10,200,10];
+const color_B = [255,200,10];
+const color_C = [255,10,10];
+const color_D = [10,10,255];
 
 const factorForUsingLogisticColorFunction = 0.6; // Full color center will move for this amount of pixels towards the center
 
 const domCanvas = document.getElementsByTagName('canvas')[0];
 
 var canvasOptions = {
-  background: ['10, 10, 4', '7,4,0', '0,0,3']
+  background: ['0, 0, 8', '7,4,0', '0,0,3']
 };
 
 var theCanvas = new Canvas(canvasOptions);
