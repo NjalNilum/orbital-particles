@@ -145,8 +145,6 @@ Canvas.prototype.doClostestStuff = function () {
     // "maximumNumberOfLines" particles that are closer to actualParticle than "maximumLinkDistance". 
     let randomParticleStartOfLoop = getRandom(0, this.particles.length - 1) | 0;
 
-    // CHECKE diese Zeugs hier!!!
-
     let indexOfInnerParticle = randomParticleStartOfLoop;
     do {
 
