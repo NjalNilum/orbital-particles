@@ -3,8 +3,11 @@
 // **********************************************************************************
 function GetIncreasedValue(theValue, growthRate, min, max) {
   theValue += growthRate;
-  if (theValue <= min || theValue >= max) {
-    growthRate *= (-1);
+  if (theValue <= min) {
+    growthRate = Math.abs(growthRate);
+  }
+  if (theValue >= max) {
+    growthRate = Math.abs(growthRate) * (-1);
   }
   return { theValue, growthRate };
 }
