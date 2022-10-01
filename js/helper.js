@@ -184,9 +184,10 @@ function getColor(proximityArray, useLogisticGrowthInPercent) {
       Math.min(g,255),
       Math.min(b,255));
 
+    // Don't tell anyone, I love full colours. 
     hsv = rgbToHsv(newColor[0], newColor[1], newColor[2]);
-    hsv[2] = Math.sqrt(hsv[2]);
-    //hsv[1] = 1;
+    hsv[2] = 1;//Math.sqrt(hsv[2]); 
+    hsv[1] = 1;//Math.sqrt(hsv[1]);
     theEnlightedColor = hsvToRgb(hsv[0], hsv[1], hsv[2]);
     return theEnlightedColor.join(', ')
   }

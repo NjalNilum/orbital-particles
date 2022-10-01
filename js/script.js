@@ -171,8 +171,6 @@ Canvas.prototype.doClostestStuff = function () {
           }
         }
       }
-
-
       indexOfInnerParticle = (indexOfInnerParticle + 1) % this.particles.length;
     } while (indexOfInnerParticle != randomParticleStartOfLoop)
   }
@@ -185,13 +183,11 @@ Canvas.prototype.doClostestStuff = function () {
 Canvas.prototype.loop = function () {
   this.ctx.globalCompositeOperation = "source-over";
   this.ctx.globalAlpha = globalAlpha;
-
   this.ctx.rect(0, 0, this.width, this.height);
   this.ctx.fillStyle = globalFillStyle;
   this.ctx.fill();
 
   if (maximumLinkDistances > 0) {
-    //this.findClosest();
     this.doClostestStuff();
   }
   this.draw();
@@ -204,7 +200,6 @@ Canvas.prototype.clear = function () {
 }
 
 // Draw
-// Function is called in a loop
 Canvas.prototype.draw = function () {
   this.ctx.globalCompositeOperation = "source-over";
 
@@ -399,19 +394,19 @@ var isSafari = !!navigator.userAgent.match(/Version\/[\d\.]+.*Safari/);
 
 const dpr = window.devicePixelRatio || 1;
 const globalAlpha = 1;
-const globalFillStyle = 'rgba(1,1,1,0.4)';
+const globalFillStyle = 'rgba(1,1,1,0.15)';
 
 const particleCount = 45;
 const followMouseSpeed = 0.03;             // 1.0 means 100%. Percentage speed of orbital center to follow the mouse cursor position
 
 // That is very imprecise. This speed is the increment of the angular velocity in radians (Remember 2*Pi = 360°).
-const minimumParticleSpeed = 0.005;
-const maximumParticleSpeed = 0.015;         // don't set it higher than 0.03 (3% of framerate), otherwise animation won't look smooth.
+const minimumParticleSpeed = 0.002;
+const maximumParticleSpeed = 0.009;         // don't set it higher than 0.03 (3% of framerate), otherwise animation won't look smooth.
 const particleSpeedChangeRate = 0.00001;
 
 // Minimal and maximal size of particles in pixel
 const minimumParticleSize = 1;
-const maximumParticleSize = 3;
+const maximumParticleSize = 4;
 const particleSizeGrowthRate = 0.01;       // the size is changing and this is the rate in pixels
 
 // Orbitsizes and changerate
@@ -428,8 +423,8 @@ const thetaChangerate = 0.1;
 const maximumLinkDistances = 400 * dpr;      // maximum length of connection lines between particles in pixels.
 const maximumNumberOfLines = 4;        // Thats not correct. Have to figure it out.
 
-const color_A = [10, 200, 10];
-const color_B = [255, 200, 10];
+const color_A = [10, 100, 40];
+const color_B = [255, 190, 10];
 const color_C = [255, 10, 10];
 const color_D = [10, 10, 255];
 
